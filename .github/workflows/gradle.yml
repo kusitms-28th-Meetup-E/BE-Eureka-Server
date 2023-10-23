@@ -29,11 +29,11 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         
-    - name: make application-prod.yml
+    - name: make application.yml
       run: |
         cd ./src/main/resources
-        touch ./application-prod.yml
-        echo "${{ secrets.APPLICATION_PROD }}" > ./application.yml
+        touch ./application.yml
+        echo "${{ secrets.APPLICATION }}" > ./application.yml
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -45,20 +45,19 @@ jobs:
       run: |
         docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
         docker build -t app .
-        docker tag app ${{ secrets.DOCKER_USERNAME }}/hackathon:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/hackathon:latest
+        docker tag app ${{ secrets.DOCKER_USERNAME }}/eureka:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/eureka:latest
 
     - name: Deploy
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.HOST }} # EC2 인스턴스 퍼블릭 DNS
+        host: ${{ secrets.HOST }} 
         username: ubuntu
-        key: ${{ secrets.PRIVATE_KEY }} # pem 키
-        # 도커 작업
+        key: ${{ secrets.PRIVATE_KEY }} 
         script: |
-          docker pull ${{ secrets.DOCKER_USERNAME }}/hackathon:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/eureka:latest
           docker stop $(docker ps -a -q)
-          docker run -d --log-driver=syslog -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod ${{ secrets.DOCKER_USERNAME }}/hackathon:latest
+          docker run -d --log-driver=syslog -p 8080:8080 -e SPRING_PROFILES_ACTIVE=prod ${{ secrets.DOCKER_USERNAME }}/eureka:latest
           docker rm $(docker ps --filter 'status=exited' -a -q)
           docker image prune -a -f
    
